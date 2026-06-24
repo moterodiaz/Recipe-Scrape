@@ -265,7 +265,8 @@ _TO_CUPS: dict[str, float] = {
 # Weight units → grams multiplier
 _TO_GRAMS_DIRECT: dict[str, float] = {
     "kilograms": 1000.0, "kilogram": 1000.0, "kg": 1000.0,
-    "grams": 1.0, "gram": 1.0,
+    "grams": 1.0, "gram": 1.0, "g": 1.0,
+    "milligrams": 0.001, "milligram": 0.001, "mg": 0.001,
     "pounds": 453.592, "pound": 453.592, "lbs": 453.592, "lb": 453.592,
     "ounces": 28.3495, "ounce": 28.3495, "oz": 28.3495,
 }
@@ -282,6 +283,10 @@ _STRIP_WORDS = frozenset({
 
 _ALL_UNITS = sorted(list(_TO_CUPS) + list(_TO_GRAMS_DIRECT), key=len, reverse=True)
 _QTY_RE = re.compile(r"^(\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)")
+_EXPLICIT_GRAMS_RE = re.compile(
+    r"(?:about\s+)?(\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)\s*(kilograms?|kg|grams?|g)\b",
+    re.I,
+)
 
 
 def _parse_qty(s: str) -> tuple[float, str]:
@@ -344,6 +349,12 @@ def ingredient_to_grams(ingredient_str: str) -> float | None:
     Parse one ingredient string and return its weight in grams.
     Returns None if the unit or ingredient density is not recognised.
     """
+    explicit = _EXPLICIT_GRAMS_RE.search(ingredient_str)
+    if explicit:
+        qty, _ = _parse_qty(explicit.group(1))
+        unit = explicit.group(2).lower()
+        return round(qty * _TO_GRAMS_DIRECT[unit], 1)
+
     qty, rest = _parse_qty(ingredient_str.strip())
     unit, ingredient_name = _parse_unit(rest)
 
@@ -380,6 +391,9 @@ if __name__ == "__main__":
         ("1/2 cup grated carrots",        round(0.5 * 99, 1)),
         ("1 cup pureed carrots",          256.0),
         ("1 cup shredded zucchini",       121.0),
+        ("300g dried penne",              300.0),
+        ("4 cooked chicken breasts (about 450g)", 450.0),
+        ("1 1/4 cup (150 grams) all purpose flour", 150.0),
     ]
     all_ok = True
     for s, expected in cases:

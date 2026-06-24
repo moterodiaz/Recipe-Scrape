@@ -21,6 +21,10 @@ FAILED_LOG = Path("output/failed_urls.log")
 
 # ISO 8601 duration: PT1H30M → 90 minutes
 _DURATION_RE = re.compile(r"PT(?:(\d+)H)?(?:(\d+)M)?")
+_HUMAN_DURATION_RE = re.compile(
+    r"(?:(\d+)\s*(?:hours?|hrs?|h))?\s*(?:(\d+)\s*(?:minutes?|mins?|m))?",
+    re.I,
+)
 
 log = logging.getLogger(__name__)
 
@@ -45,10 +49,15 @@ def _extract_jsonld(soup) -> dict | None:
 
 
 def _parse_duration(s: str | None) -> int | None:
-    """ISO 8601 PT1H30M → 90. Returns None if unparseable or zero."""
+    """Parse ISO 8601 or short human durations to minutes."""
     if not s:
         return None
+    s = str(s).strip()
     m = _DURATION_RE.match(s)
+    if m:
+        total = int(m.group(1) or 0) * 60 + int(m.group(2) or 0)
+        return total or None
+    m = _HUMAN_DURATION_RE.fullmatch(s)
     if not m:
         return None
     total = int(m.group(1) or 0) * 60 + int(m.group(2) or 0)
@@ -64,12 +73,27 @@ def _parse_servings(yield_val) -> int | None:
     return int(m.group()) if m else None
 
 
+def _as_list(value) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(v).strip() for v in value if str(v).strip()]
+    if isinstance(value, str):
+        return [v.strip() for v in re.split(r"[,|]", value) if v.strip()]
+    return [str(value).strip()] if str(value).strip() else []
+
+
 def _flatten_instructions(field) -> str:
     """schema.org recipeInstructions can be str, list[str], or list[HowToStep]."""
     if isinstance(field, str):
         return field.strip()
+    if isinstance(field, dict):
+        if field.get("text"):
+            return str(field["text"]).strip()
+        if field.get("itemListElement"):
+            return _flatten_instructions(field["itemListElement"])
     if isinstance(field, list):
-        parts = [item.get("text", "") if isinstance(item, dict) else str(item) for item in field]
+        parts = [_flatten_instructions(item) for item in field]
         return "\n".join(p.strip() for p in parts if p.strip())
     return ""
 
@@ -78,13 +102,22 @@ def _scrape_jsonld(soup) -> dict | None:
     data = _extract_jsonld(soup)
     if not data:
         return None
-    cook_time_str = data.get("cookTime") or data.get("totalTime")
+    prep_time_min = _parse_duration(data.get("prepTime"))
+    cook_time_min = _parse_duration(data.get("cookTime"))
+    total_time_min = _parse_duration(data.get("totalTime"))
+    if cook_time_min is None and total_time_min is not None and prep_time_min is not None:
+        cook_time_min = max(total_time_min - prep_time_min, 0) or None
     return {
         "title": (data.get("name") or "").strip(),
         "ingredients": [i.strip() for i in data.get("recipeIngredient", []) if i.strip()],
         "instructions": _flatten_instructions(data.get("recipeInstructions", "")),
         "servings": _parse_servings(data.get("recipeYield")),
-        "cook_time_min": _parse_duration(cook_time_str),
+        "prep_time_min": prep_time_min,
+        "cook_time_min": cook_time_min,
+        "total_time_min": total_time_min,
+        "recipe_category": data.get("recipeCategory"),
+        "cuisine_type": _as_list(data.get("recipeCuisine")),
+        "keywords": _as_list(data.get("keywords")),
     }
 
 
@@ -136,7 +169,28 @@ def _scrape_html(soup) -> dict:
             steps = [li.get_text(strip=True) for li in ol.find_all("li") if li.get_text(strip=True)]
             instructions = "\n".join(steps)
 
-    return {"title": title, "ingredients": ingredients, "instructions": instructions, "servings": None, "cook_time_min": None}
+    page_text = soup.get_text(" ", strip=True)
+
+    def _extract_label_time(label: str) -> int | None:
+        m = re.search(rf"\b{label}\s*:?\s*((?:\d+\s*(?:hours?|hrs?|h))?\s*(?:\d+\s*(?:minutes?|mins?|m))?)", page_text, re.I)
+        return _parse_duration(m.group(1).strip()) if m else None
+
+    prep_time_min = _extract_label_time("prep")
+    cook_time_min = _extract_label_time("cook")
+    total_time_min = (prep_time_min or 0) + (cook_time_min or 0) or None
+
+    return {
+        "title": title,
+        "ingredients": ingredients,
+        "instructions": instructions,
+        "servings": None,
+        "prep_time_min": prep_time_min,
+        "cook_time_min": cook_time_min,
+        "total_time_min": total_time_min,
+        "recipe_category": None,
+        "cuisine_type": [],
+        "keywords": [],
+    }
 
 
 # ── Public API ────────────────────────────────────────────────────────────────

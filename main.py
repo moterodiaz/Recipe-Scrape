@@ -5,6 +5,8 @@ Usage:
     python main.py                    # full run: collect URLs → scrape → process
     python main.py --skip-collection  # skip Phase 1, reuse output/recipe_urls.json
     python main.py --limit 50         # cap URL count for testing
+    python main.py --url URL          # scrape one recipe URL
+    python main.py --source bbc --target-urls 1000 --limit 1000
 """
 
 import argparse
@@ -16,10 +18,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from url_collector import collect_urls
+from bbc_url_collector import collect_bbc_urls
 from recipe_scraper import scrape_all
 from processor import process_record
 
 URL_FILE = Path("output/recipe_urls.json")
+BBC_URL_FILE = Path("output/bbc_recipe_urls.json")
 OUTPUT_FILE = Path("output/recipes.json")
 SUMMARY_FILE = Path("output/scrape_summary.json")
 
@@ -40,14 +44,22 @@ def _assemble(raw: dict) -> dict:
         "url": raw["url"],
         "title": raw.get("title", ""),
         "meal_type": raw.get("meal_type"),
+        "recipe_category": raw.get("recipe_category"),
+        "cuisine_type": raw.get("cuisine_type", []),
+        "keywords": raw.get("keywords", []),
         "dietary": raw.get("dietary", []),
         "ingredients": raw.get("ingredients", []),
+        "ingredient_names": raw.get("ingredient_names", []),
         "ingredient_grams": raw.get("ingredient_grams", []),
         "equipment": raw.get("equipment", []),
+        "cooking_processes": raw.get("cooking_processes", []),
         "flavor_profile": raw.get("flavor_profile", []),
+        "aroma_profile": raw.get("aroma_profile", []),
         "instructions_raw": raw.get("instructions", ""),
         "servings": raw.get("servings"),
+        "prep_time_min": raw.get("prep_time_min"),
         "cook_time_min": raw.get("cook_time_min"),
+        "total_time_min": raw.get("total_time_min"),
     }
 
 
@@ -73,28 +85,44 @@ def _write_summary(records: list[dict]):
 
 def main():
     parser = argparse.ArgumentParser(description="Food52 recipe scraper")
+    parser.add_argument("--source", choices=("food52", "bbc"), default="food52", help="Recipe source for collection mode")
     parser.add_argument("--skip-collection", action="store_true", help="Reuse existing recipe_urls.json")
     parser.add_argument("--limit", type=int, default=0, help="Cap number of URLs to scrape (0 = all)")
+    parser.add_argument("--offset", type=int, default=0, help="Skip this many collected URLs before applying --limit")
     parser.add_argument("--max-pages", type=int, default=500, help="Max pages per category in Phase 1 (lower for test runs)")
+    parser.add_argument("--target-urls", type=int, default=1000, help="Target URL count for BBC collection")
+    parser.add_argument("--url", help="Scrape a single recipe URL instead of collecting Food52 URLs")
     args = parser.parse_args()
 
     Path("output").mkdir(exist_ok=True)
 
     # Phase 1
-    if args.skip_collection:
-        if not URL_FILE.exists():
-            raise FileNotFoundError(f"{URL_FILE} not found — run without --skip-collection first")
-        url_records = json.loads(URL_FILE.read_text())
-        log.info("Loaded %d URLs from %s", len(url_records), URL_FILE)
+    if args.url:
+        url_records = [{"url": args.url, "meal_type": None, "dietary": []}]
+        log.info("Scraping single URL: %s", args.url)
+    elif args.skip_collection:
+        url_file = BBC_URL_FILE if args.source == "bbc" else URL_FILE
+        if not url_file.exists():
+            raise FileNotFoundError(f"{url_file} not found — run without --skip-collection first")
+        url_records = json.loads(url_file.read_text())
+        log.info("Loaded %d URLs from %s", len(url_records), url_file)
     else:
-        url_records = collect_urls(max_pages=args.max_pages)
+        if args.source == "bbc":
+            url_records = collect_bbc_urls(max_urls=args.target_urls, max_pages=args.max_pages)
+        else:
+            url_records = collect_urls(max_pages=args.max_pages)
 
-    # ponytail: filter here covers stale cache files where the URL collector regex hadn't run yet
-    _recipe_url_re = re.compile(r"/recipes/\d{4,}-")
-    before = len(url_records)
-    url_records = [r for r in url_records if _recipe_url_re.search(r["url"])]
-    if len(url_records) != before:
-        log.info("Filtered %d non-recipe URLs", before - len(url_records))
+    if not args.url and args.source == "food52":
+        # ponytail: filter here covers stale cache files where the URL collector regex hadn't run yet
+        _recipe_url_re = re.compile(r"/recipes/\d{4,}-")
+        before = len(url_records)
+        url_records = [r for r in url_records if _recipe_url_re.search(r["url"])]
+        if len(url_records) != before:
+            log.info("Filtered %d non-recipe URLs", before - len(url_records))
+
+    if args.offset:
+        url_records = url_records[args.offset:]
+        log.info("Skipped first %d URLs", args.offset)
 
     if args.limit:
         url_records = url_records[: args.limit]
