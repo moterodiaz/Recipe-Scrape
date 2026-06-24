@@ -1,0 +1,110 @@
+"""
+Orchestrator — Food52 recipe scraper pipeline.
+
+Usage:
+    python main.py                    # full run: collect URLs → scrape → process
+    python main.py --skip-collection  # skip Phase 1, reuse output/recipe_urls.json
+    python main.py --limit 50         # cap URL count for testing
+"""
+
+import argparse
+import hashlib
+import json
+import logging
+import re
+from datetime import datetime, timezone
+from pathlib import Path
+
+from url_collector import collect_urls
+from recipe_scraper import scrape_all
+from processor import process_record
+
+URL_FILE = Path("output/recipe_urls.json")
+OUTPUT_FILE = Path("output/recipes.json")
+SUMMARY_FILE = Path("output/scrape_summary.json")
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+log = logging.getLogger(__name__)
+
+_SLUG_RE = re.compile(r"[^a-z0-9]+")
+
+
+def _make_id(title: str, url: str) -> str:
+    slug = _SLUG_RE.sub("-", title.lower()).strip("-")
+    return slug if slug else hashlib.md5(url.encode()).hexdigest()[:12]
+
+
+def _assemble(raw: dict) -> dict:
+    return {
+        "id": _make_id(raw.get("title", ""), raw["url"]),
+        "url": raw["url"],
+        "title": raw.get("title", ""),
+        "meal_type": raw.get("meal_type"),
+        "dietary": raw.get("dietary", []),
+        "ingredients": raw.get("ingredients", []),
+        "equipment": raw.get("equipment", []),
+        "flavor_profile": raw.get("flavor_profile", []),
+        "instructions_raw": raw.get("instructions", ""),
+        "servings": raw.get("servings"),
+        "cook_time_min": raw.get("cook_time_min"),
+    }
+
+
+def _write_summary(records: list[dict]):
+    meal_counts: dict[str, int] = {}
+    diet_counts: dict[str, int] = {}
+    for r in records:
+        mt = r.get("meal_type")
+        if mt:
+            meal_counts[mt] = meal_counts.get(mt, 0) + 1
+        for d in r.get("dietary", []):
+            diet_counts[d] = diet_counts.get(d, 0) + 1
+
+    summary = {
+        "total": len(records),
+        "by_meal_type": meal_counts,
+        "by_dietary": diet_counts,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    SUMMARY_FILE.write_text(json.dumps(summary, indent=2))
+    log.info("Summary → %s", summary)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Food52 recipe scraper")
+    parser.add_argument("--skip-collection", action="store_true", help="Reuse existing recipe_urls.json")
+    parser.add_argument("--limit", type=int, default=0, help="Cap number of URLs to scrape (0 = all)")
+    args = parser.parse_args()
+
+    Path("output").mkdir(exist_ok=True)
+
+    # Phase 1
+    if args.skip_collection:
+        if not URL_FILE.exists():
+            raise FileNotFoundError(f"{URL_FILE} not found — run without --skip-collection first")
+        url_records = json.loads(URL_FILE.read_text())
+        log.info("Loaded %d URLs from %s", len(url_records), URL_FILE)
+    else:
+        url_records = collect_urls()
+
+    if args.limit:
+        url_records = url_records[: args.limit]
+        log.info("Capped to %d URLs", len(url_records))
+
+    # Phase 2A
+    scraped = scrape_all(url_records)
+
+    # Phase 2B
+    for record in scraped:
+        process_record(record)
+
+    # Assemble and write
+    records = [_assemble(r) for r in scraped]
+    OUTPUT_FILE.write_text(json.dumps(records, indent=2))
+    log.info("Wrote %d records → %s", len(records), OUTPUT_FILE)
+
+    _write_summary(records)
+
+
+if __name__ == "__main__":
+    main()
