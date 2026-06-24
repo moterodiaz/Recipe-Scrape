@@ -74,6 +74,7 @@ def main():
     parser = argparse.ArgumentParser(description="Food52 recipe scraper")
     parser.add_argument("--skip-collection", action="store_true", help="Reuse existing recipe_urls.json")
     parser.add_argument("--limit", type=int, default=0, help="Cap number of URLs to scrape (0 = all)")
+    parser.add_argument("--max-pages", type=int, default=500, help="Max pages per category in Phase 1 (lower for test runs)")
     args = parser.parse_args()
 
     Path("output").mkdir(exist_ok=True)
@@ -85,7 +86,7 @@ def main():
         url_records = json.loads(URL_FILE.read_text())
         log.info("Loaded %d URLs from %s", len(url_records), URL_FILE)
     else:
-        url_records = collect_urls()
+        url_records = collect_urls(max_pages=args.max_pages)
 
     if args.limit:
         url_records = url_records[: args.limit]

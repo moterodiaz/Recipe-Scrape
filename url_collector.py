@@ -32,8 +32,8 @@ CATEGORY_MAP: dict[str, dict] = {
 BASE_URL = "https://food52.com"
 OUTPUT_PATH = Path("output/recipe_urls.json")
 
-# Matches /recipes/NNNNN-some-slug — excludes category pages like /recipes/dinner
-RECIPE_PATH_RE = re.compile(r"^/recipes/\d+-")
+# 4+ digit ID required — avoids matching category slugs like /recipes/5-ingredients-or-fewer
+RECIPE_PATH_RE = re.compile(r"^/recipes/\d{4,}-")
 
 log = logging.getLogger(__name__)
 
@@ -74,9 +74,10 @@ def _crawl_category(session: requests.Session, slug: str, max_pages: int = 500) 
     return all_paths
 
 
-def collect_urls() -> list[dict]:
+def collect_urls(max_pages: int = 500) -> list[dict]:
     """
     Phase 1 entry point.
+    max_pages: cap per-category page count (lower for test runs).
     Returns and writes list of {url, meal_type, dietary} records.
     """
     # url → {meal_type: str|None, dietary: set[str]}
@@ -84,7 +85,7 @@ def collect_urls() -> list[dict]:
 
     with requests.Session() as session:
         for slug, tags in CATEGORY_MAP.items():
-            paths = _crawl_category(session, slug)
+            paths = _crawl_category(session, slug, max_pages=max_pages)
             log.info("%d recipe paths in %s", len(paths), slug)
             for path in paths:
                 url = f"{BASE_URL}{path}"
