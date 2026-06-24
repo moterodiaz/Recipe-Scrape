@@ -107,19 +107,28 @@ def _scrape_html(soup) -> dict:
     h1 = soup.find("h1")
     title = h1.get_text(strip=True) if h1 else ""
 
+    def _is_content_heading(t, keywords):
+        """True if tag is a short content heading with a keyword, not buried in a nav <li>."""
+        return (
+            t.name in ("h2", "h3", "h4")
+            and any(kw in t.get_text(strip=True).lower() for kw in keywords)
+            and t.parent.name not in ("li", "nav")
+            and len(t.get_text(strip=True)) < 60
+        )
+
     ingredients: list[str] = []
-    ing_heading = soup.find(
-        lambda t: t.name in ("h2", "h3", "h4") and "ingredient" in t.get_text(strip=True).lower()
-    )
+    ing_heading = soup.find(lambda t: _is_content_heading(t, ("ingredient",)))
     if ing_heading:
         ul = ing_heading.find_next("ul")
         if ul:
-            ingredients = [li.get_text(strip=True) for li in ul.find_all("li") if li.get_text(strip=True)]
+            ingredients = [
+                " ".join(li.get_text(separator=" ", strip=True).split())
+                for li in ul.find_all("li") if li.get_text(strip=True)
+            ]
 
     instructions = ""
     inst_heading = soup.find(
-        lambda t: t.name in ("h2", "h3", "h4")
-        and any(kw in t.get_text(strip=True).lower() for kw in ("instruction", "direction", "preparation", "method", "step"))
+        lambda t: _is_content_heading(t, ("instruction", "direction", "preparation", "method", "step"))
     )
     if inst_heading:
         ol = inst_heading.find_next("ol")

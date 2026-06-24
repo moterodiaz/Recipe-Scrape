@@ -42,6 +42,7 @@ def _assemble(raw: dict) -> dict:
         "meal_type": raw.get("meal_type"),
         "dietary": raw.get("dietary", []),
         "ingredients": raw.get("ingredients", []),
+        "ingredient_grams": raw.get("ingredient_grams", []),
         "equipment": raw.get("equipment", []),
         "flavor_profile": raw.get("flavor_profile", []),
         "instructions_raw": raw.get("instructions", ""),
@@ -87,6 +88,13 @@ def main():
         log.info("Loaded %d URLs from %s", len(url_records), URL_FILE)
     else:
         url_records = collect_urls(max_pages=args.max_pages)
+
+    # ponytail: filter here covers stale cache files where the URL collector regex hadn't run yet
+    _recipe_url_re = re.compile(r"/recipes/\d{4,}-")
+    before = len(url_records)
+    url_records = [r for r in url_records if _recipe_url_re.search(r["url"])]
+    if len(url_records) != before:
+        log.info("Filtered %d non-recipe URLs", before - len(url_records))
 
     if args.limit:
         url_records = url_records[: args.limit]

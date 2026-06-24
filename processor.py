@@ -7,6 +7,8 @@ over recipe text fields using pre-compiled regex rules.
 
 import re
 
+from gram_converter import ingredient_to_grams
+
 # (pattern, equipment label) — scanned over instructions text
 _EQUIPMENT_RULES: list[tuple[re.Pattern, str]] = [
     (re.compile(r"\b(bak(e|ed|ing)|roast(ed|ing)?|broil(ed|ing)?|preheat\s+oven)\b", re.I), "oven"),
@@ -67,11 +69,14 @@ def infer_flavor_profile(ingredients: list[str], title: str) -> list[str]:
 
 
 def process_record(record: dict) -> dict:
-    """Enrich a scraped record in-place with equipment and flavor_profile lists."""
+    """Enrich a scraped record in-place with equipment, flavor_profile, and ingredient_grams."""
     record["equipment"] = infer_equipment(record.get("instructions", "") or "")
     record["flavor_profile"] = infer_flavor_profile(
         record.get("ingredients", []) or [], record.get("title", "") or ""
     )
+    record["ingredient_grams"] = [
+        ingredient_to_grams(i) for i in (record.get("ingredients") or [])
+    ]
     return record
 
 
