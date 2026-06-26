@@ -248,6 +248,19 @@ GRAMS_PER_CUP: dict[str, float] = {
     "cheese": 113,
 }
 
+# Fix 1: unicode fraction substitution applied at entry point
+_UNICODE_FRAC_MAP: dict[str, str] = {
+    "¼": "0.25", "½": "0.5", "¾": "0.75",
+    "⅓": "0.333", "⅔": "0.667",
+    "⅛": "0.125", "⅜": "0.375", "⅝": "0.625", "⅞": "0.875",
+}
+_UNICODE_FRAC_RE = re.compile("|".join(re.escape(k) for k in _UNICODE_FRAC_MAP))
+
+
+def _sub_unicode_fractions(s: str) -> str:
+    return _UNICODE_FRAC_RE.sub(lambda m: _UNICODE_FRAC_MAP[m.group()], s)
+
+
 # Volume units → cups multiplier (longest first for greedy parsing)
 _TO_CUPS: dict[str, float] = {
     "tablespoons": 1 / 16, "tablespoon": 1 / 16,
@@ -258,24 +271,79 @@ _TO_CUPS: dict[str, float] = {
     "pints": 2.0, "pint": 2.0, "pt": 2.0,
     "quarts": 4.0, "quart": 4.0, "qt": 4.0,
     "gallons": 16.0, "gallon": 16.0,
-    "sticks": 0.5, "stick": 0.5,   # 1 stick butter = 1/2 cup
+    "sticks": 0.5, "stick": 0.5,
     "fl oz": 0.125, "floz": 0.125,
 }
 
-# Weight units → grams multiplier
+# Weight / volume units → grams multiplier (Fix 2: ml/l/cl added)
 _TO_GRAMS_DIRECT: dict[str, float] = {
     "kilograms": 1000.0, "kilogram": 1000.0, "kg": 1000.0,
     "grams": 1.0, "gram": 1.0, "g": 1.0,
     "milligrams": 0.001, "milligram": 0.001, "mg": 0.001,
     "pounds": 453.592, "pound": 453.592, "lbs": 453.592, "lb": 453.592,
     "ounces": 28.3495, "ounce": 28.3495, "oz": 28.3495,
+    # ponytail: density ≈ 1 g/ml; fine for milk/stock/water/wine at kitchen scale
+    "millilitres": 1.0, "milliliters": 1.0, "ml": 1.0,
+    "centilitres": 10.0, "centiliters": 10.0, "cl": 10.0,
+    "litres": 1000.0, "liters": 1000.0, "l": 1000.0,
 }
+
+# Fix 3: piece weights (average grams per single item)
+_PIECE_WEIGHTS: dict[str, float] = {
+    # Proteins
+    "chicken breast": 175, "chicken thigh": 110, "chicken wing": 90,
+    "chicken leg": 130, "chicken drumstick": 110,
+    "egg": 50, "sausage": 60, "pork chop": 180, "lamb chop": 150,
+    "salmon fillet": 170, "cod fillet": 140, "haddock fillet": 140,
+    "prawn": 7, "shrimp": 7, "mussel": 20, "scallop": 30,
+    # Alliums
+    "onion": 110, "red onion": 110, "white onion": 110, "brown onion": 110,
+    "shallot": 25, "garlic clove": 5, "clove garlic": 5,
+    "leek": 90, "spring onion": 15, "scallion": 15,
+    # Vegetables
+    "carrot": 60, "potato": 200, "sweet potato": 230,
+    "tomato": 120, "cherry tomato": 15, "plum tomato": 90,
+    "bell pepper": 150, "pepper": 150, "chilli": 15, "chili": 15,
+    "cucumber": 300, "courgette": 200, "zucchini": 200,
+    "aubergine": 250, "eggplant": 250, "parsnip": 120,
+    "beetroot": 150, "turnip": 150, "radish": 15,
+    "celery stalk": 40, "celery stick": 40,
+    "head broccoli": 400, "head cauliflower": 600, "head lettuce": 400,
+    "head garlic": 50,
+    # Fruit
+    "avocado": 200, "lemon": 60, "lime": 50, "orange": 130,
+    "apple": 180, "banana": 120, "pear": 170, "peach": 150,
+    "plum": 70, "mango": 300,
+    # Bakery / carbs
+    "naan": 100, "tortilla": 50, "wrap": 50, "pitta": 60, "pita": 60,
+    "slice bread": 30, "bread roll": 60,
+    # Generic countable units
+    "can": 400, "tin": 400, "jar": 350,
+    "pack": 250, "packet": 250, "bag": 250,
+    "bunch": 30, "handful": 30,
+    "sprig": 2, "pinch": 0.5,
+    "thumb": 25, "thumb-sized piece": 25, "knob": 15,
+}
+
+# Piece unit tokens — words that signal "N × piece of X"
+_PIECE_UNITS = frozenset({
+    "breast", "breasts", "thigh", "thighs", "leg", "legs",
+    "drumstick", "drumsticks", "wing", "wings", "fillet", "fillets",
+    "clove", "cloves", "stalk", "stalks", "sprig", "sprigs",
+    "bunch", "bunches", "handful", "handfuls",
+    "pinch", "pinches", "head", "heads",
+    "can", "cans", "tin", "tins", "jar", "jars",
+    "pack", "packs", "packet", "packets", "bag", "bags",
+    "slice", "slices", "piece", "pieces",
+    "knob", "thumb",
+})
 
 _STRIP_WORDS = frozenset({
     "fresh", "frozen", "canned", "packed", "cooked", "raw", "organic",
     "unsalted", "salted", "sweetened", "large", "small", "medium", "extra",
     "light", "melted", "softened", "drained", "rinsed", "peeled", "pitted",
     "trimmed", "finely", "coarsely", "thinly", "roughly", "diced",
+    "boneless", "skinless", "skin-on", "bone-in",
     # sliced/chopped/minced/grated/shredded/crushed/mashed/pureed intentionally NOT stripped —
     # they appear in GRAMS_PER_CUP keys and affect density (e.g. almonds sliced 86 vs whole 142)
     "a", "an", "the", "of", "or", "and", "to", "taste",
@@ -287,6 +355,7 @@ _EXPLICIT_GRAMS_RE = re.compile(
     r"(?:about\s+)?(\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)\s*(kilograms?|kg|grams?|g)\b",
     re.I,
 )
+_PIECE_KEYS = sorted(_PIECE_WEIGHTS, key=len, reverse=True)
 
 
 def _parse_qty(s: str) -> tuple[float, str]:
@@ -329,7 +398,7 @@ _DENSITY_KEYS = sorted(GRAMS_PER_CUP, key=len, reverse=True)
 
 def _lookup_density(name: str) -> float | None:
     """Grams/cup for ingredient name.
-    Order: exact → token-set subset (handles word-order variants) → substring → token overlap."""
+    Order: exact → token-set subset → substring → token overlap."""
     norm = _normalize_name(name)
     if norm in GRAMS_PER_CUP:
         return GRAMS_PER_CUP[norm]
@@ -346,56 +415,104 @@ def _lookup_density(name: str) -> float | None:
     return None
 
 
+def _lookup_piece(name: str) -> float | None:
+    """Grams per piece for whole/countable ingredients.
+    Order: exact → token-set subset → substring."""
+    norm = _normalize_name(name)
+    if norm in _PIECE_WEIGHTS:
+        return _PIECE_WEIGHTS[norm]
+    norm_tokens = set(norm.split())
+    for key in _PIECE_KEYS:
+        if set(key.split()) <= norm_tokens:
+            return _PIECE_WEIGHTS[key]
+    for key in _PIECE_KEYS:
+        if key in norm:
+            return _PIECE_WEIGHTS[key]
+    return None
+
+
 def ingredient_to_grams(ingredient_str: str) -> float | None:
-    """
-    Parse one ingredient string and return its weight in grams.
-    Returns None if the unit or ingredient density is not recognised.
-    """
-    explicit = _EXPLICIT_GRAMS_RE.search(ingredient_str)
+    """Parse one ingredient string and return its weight in grams.
+    Returns None only for truly unrecognisable bare items."""
+    # Fix 1: normalise unicode fractions before anything else
+    s = _sub_unicode_fractions(ingredient_str)
+
+    # Explicit gram/kg annotation wins (e.g. "4 chicken breasts (about 450g)")
+    explicit = _EXPLICIT_GRAMS_RE.search(s)
     if explicit:
         qty, _ = _parse_qty(explicit.group(1))
         unit = explicit.group(2).lower()
         return round(qty * _TO_GRAMS_DIRECT[unit], 1)
 
-    qty, rest = _parse_qty(ingredient_str.strip())
+    qty, rest = _parse_qty(s.strip())
     unit, ingredient_name = _parse_unit(rest)
 
-    if unit is None:
-        return None
-
-    if unit in _TO_GRAMS_DIRECT:
+    # Fix 2 + existing: direct weight / volume unit
+    if unit is not None and unit in _TO_GRAMS_DIRECT:
         return round(qty * _TO_GRAMS_DIRECT[unit], 1)
 
-    if unit in _TO_CUPS:
+    # Existing: volume → density lookup
+    if unit is not None and unit in _TO_CUPS:
         density = _lookup_density(ingredient_name)
         if density is not None:
             return round(qty * _TO_CUPS[unit] * density, 1)
+
+    # Fix 3: piece unit (e.g. "2 chicken breasts", "3 garlic cloves")
+    if unit is not None and unit in _PIECE_UNITS:
+        combined = f"{_normalize_name(ingredient_name)} {unit}".strip()
+        pw = _lookup_piece(combined) or _lookup_piece(ingredient_name) or _PIECE_WEIGHTS.get(unit)
+        if pw is not None:
+            return round(qty * pw, 1)
+
+    # Fix 4: no unit — try piece-weight table on full rest string
+    if unit is None:
+        pw = _lookup_piece(rest)
+        if pw is not None:
+            return round(qty * pw, 1)
 
     return None
 
 
 if __name__ == "__main__":
     cases = [
-        ("2 cup all-purpose flour",       240.0),
-        ("1/2 cup butter",                113.0),
-        ("1 cup sugar",                   198.0),
-        ("1 cup buttermilk",              227.0),
-        ("2 1/2 teaspoon baking powder",  round(2.5 / 48 * 192, 1)),
-        ("1/2 teaspoon baking soda",      round(0.5 / 48 * 288, 1)),
-        ("1 tablespoon honey",            round(1 / 16 * 336, 1)),
-        ("8 oz cream cheese",             round(8 * 28.3495, 1)),
-        ("1 lb butter",                   453.6),
-        ("1 stick butter",                113.0),
-        # previously-unreachable variant keys
-        ("1/2 cup sliced almonds",        round(0.5 * 86, 1)),
-        ("1 cup mashed bananas",          227.0),
-        ("1 tablespoon minced garlic",    round(1 / 16 * 224, 1)),
-        ("1/2 cup grated carrots",        round(0.5 * 99, 1)),
-        ("1 cup pureed carrots",          256.0),
-        ("1 cup shredded zucchini",       121.0),
-        ("300g dried penne",              300.0),
+        # Original cases
+        ("2 cup all-purpose flour",               240.0),
+        ("1/2 cup butter",                        113.0),
+        ("1 cup sugar",                           198.0),
+        ("1 cup buttermilk",                      227.0),
+        ("2 1/2 teaspoon baking powder",          round(2.5 / 48 * 192, 1)),
+        ("1/2 teaspoon baking soda",              round(0.5 / 48 * 288, 1)),
+        ("1 tablespoon honey",                    round(1 / 16 * 336, 1)),
+        ("8 oz cream cheese",                     round(8 * 28.3495, 1)),
+        ("1 lb butter",                           453.6),
+        ("1 stick butter",                        113.0),
+        ("1/2 cup sliced almonds",                round(0.5 * 86, 1)),
+        ("1 cup mashed bananas",                  227.0),
+        ("1 tablespoon minced garlic",            round(1 / 16 * 224, 1)),
+        ("1/2 cup grated carrots",                round(0.5 * 99, 1)),
+        ("1 cup pureed carrots",                  256.0),
+        ("1 cup shredded zucchini",               121.0),
+        ("300g dried penne",                      300.0),
         ("4 cooked chicken breasts (about 450g)", 450.0),
         ("1 1/4 cup (150 grams) all purpose flour", 150.0),
+        # Fix 1: unicode fractions
+        ("¼ tsp salt",                            round(0.25 / 48 * 288, 1)),
+        ("½ cup olive oil",                       round(0.5 * 200, 1)),
+        ("¾ tsp salt",                            round(0.75 / 48 * 288, 1)),
+        # Fix 2: ml / litres
+        ("150ml whole milk",                      150.0),
+        ("650ml milk",                            650.0),
+        ("1l vegetable stock",                    1000.0),
+        # Fix 3: piece units
+        ("2 garlic cloves crushed",               10.0),   # 2 × 5g
+        ("6 chicken thighs boneless",             660.0),  # 6 × 110g
+        ("1 bunch fresh coriander",               30.0),
+        ("1 can chopped tomatoes",                400.0),
+        # Fix 4: unitless count
+        ("1 onion finely chopped",                110.0),
+        ("2 carrots peeled",                      120.0),  # 2 × 60g
+        ("4 skinless chicken breasts",            700.0),  # 4 × 175g
+        ("1 lemon zested",                        60.0),
     ]
     all_ok = True
     for s, expected in cases:
