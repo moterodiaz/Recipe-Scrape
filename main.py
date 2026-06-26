@@ -1,12 +1,11 @@
 """
-Orchestrator — Food52 recipe scraper pipeline.
+Orchestrator — BBC Good Food recipe scraper pipeline.
 
 Usage:
     python main.py                    # full run: collect URLs → scrape → process
-    python main.py --skip-collection  # skip Phase 1, reuse output/recipe_urls.json
+    python main.py --skip-collection  # skip Phase 1, reuse output/bbc_recipe_urls.json
     python main.py --limit 50         # cap URL count for testing
-    python main.py --url URL          # scrape one recipe URL
-    python main.py --source bbc --target-urls 1000 --limit 1000
+    python main.py --url URL          # scrape a single recipe URL
 """
 
 import argparse
@@ -17,12 +16,10 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-from url_collector import collect_urls
 from bbc_url_collector import collect_bbc_urls
 from recipe_scraper import scrape_all
 from processor import process_record
 
-URL_FILE = Path("output/recipe_urls.json")
 BBC_URL_FILE = Path("output/bbc_recipe_urls.json")
 OUTPUT_FILE = Path("output/recipes.json")
 SUMMARY_FILE = Path("output/scrape_summary.json")
@@ -88,14 +85,13 @@ def _write_summary(records: list[dict]):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Food52 recipe scraper")
-    parser.add_argument("--source", choices=("food52", "bbc"), default="food52", help="Recipe source for collection mode")
-    parser.add_argument("--skip-collection", action="store_true", help="Reuse existing recipe_urls.json")
+    parser = argparse.ArgumentParser(description="BBC Good Food recipe scraper")
+    parser.add_argument("--skip-collection", action="store_true", help="Reuse existing bbc_recipe_urls.json")
     parser.add_argument("--limit", type=int, default=0, help="Cap number of URLs to scrape (0 = all)")
     parser.add_argument("--offset", type=int, default=0, help="Skip this many collected URLs before applying --limit")
-    parser.add_argument("--max-pages", type=int, default=500, help="Max pages per category in Phase 1 (lower for test runs)")
-    parser.add_argument("--target-urls", type=int, default=1000, help="Target URL count for BBC collection")
-    parser.add_argument("--url", help="Scrape a single recipe URL instead of collecting Food52 URLs")
+    parser.add_argument("--max-pages", type=int, default=500, help="Max index pages crawled in Phase 1")
+    parser.add_argument("--target-urls", type=int, default=1000, help="Target URL count for collection")
+    parser.add_argument("--url", help="Scrape a single recipe URL")
     parser.add_argument("--crop-csv", default=None, help="Path to crop CSV; enables Phase 3 crop cross-check")
     parser.add_argument("--min-crop-coverage", type=float, default=0.0, help="Exclude recipes below this crop coverage (0–1)")
     args = parser.parse_args()
@@ -107,16 +103,12 @@ def main():
         url_records = [{"url": args.url, "meal_type": None, "dietary": []}]
         log.info("Scraping single URL: %s", args.url)
     elif args.skip_collection:
-        url_file = BBC_URL_FILE if args.source == "bbc" else URL_FILE
-        if not url_file.exists():
-            raise FileNotFoundError(f"{url_file} not found — run without --skip-collection first")
-        url_records = json.loads(url_file.read_text())
-        log.info("Loaded %d URLs from %s", len(url_records), url_file)
+        if not BBC_URL_FILE.exists():
+            raise FileNotFoundError(f"{BBC_URL_FILE} not found — run without --skip-collection first")
+        url_records = json.loads(BBC_URL_FILE.read_text())
+        log.info("Loaded %d URLs from %s", len(url_records), BBC_URL_FILE)
     else:
-        if args.source == "bbc":
-            url_records = collect_bbc_urls(max_urls=args.target_urls, max_pages=args.max_pages)
-        else:
-            url_records = collect_urls(max_pages=args.max_pages)
+        url_records = collect_bbc_urls(max_urls=args.target_urls, max_pages=args.max_pages)
 
     if args.offset:
         url_records = url_records[args.offset:]
@@ -141,10 +133,9 @@ def main():
         scraped = annotate_crop_coverage(scraped, crop_terms, min_coverage=args.min_crop_coverage)
         log.info("Crop filter: kept %d / %d recipes (min_coverage=%.2f)", len(scraped), before, args.min_crop_coverage)
 
-    # Assemble and write
     records = [_assemble(r) for r in scraped]
     OUTPUT_FILE.write_text(json.dumps(records, indent=2))
-    log.info("Wrote %d records → %s", len(records), OUTPUT_FILE)
+    log.info("Wrote %d records → output/recipes.json", len(records))
 
     _write_summary(records)
 
