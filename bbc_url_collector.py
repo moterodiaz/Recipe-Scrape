@@ -48,24 +48,21 @@ def _clean_url(url: str) -> str:
     return urlunparse((parsed.scheme, parsed.netloc, parsed.path.rstrip("/"), "", "", ""))
 
 
-def _path(url: str) -> str:
-    return urlparse(url).path.rstrip("/") or "/"
-
-
 def _is_recipe_url(url: str) -> bool:
-    path = _path(url)
-    slug = path.rsplit("/", 1)[-1]
+    parsed = urlparse(url)
+    path = parsed.path.rstrip("/") or "/"
     return (
-        urlparse(url).netloc == "www.bbcgoodfood.com"
-        and slug not in NON_RECIPE_SLUGS
+        parsed.netloc == "www.bbcgoodfood.com"
+        and path.rsplit("/", 1)[-1] not in NON_RECIPE_SLUGS
         and bool(RECIPE_PATH_RE.match(path))
     )
 
 
 def _is_index_url(url: str) -> bool:
-    if urlparse(url).netloc != "www.bbcgoodfood.com":
+    parsed = urlparse(url)
+    if parsed.netloc != "www.bbcgoodfood.com":
         return False
-    path = _path(url)
+    path = parsed.path.rstrip("/") or "/"
     return bool(INDEX_PATH_RE.match(path) or PAGED_INDEX_RE.match(path))
 
 

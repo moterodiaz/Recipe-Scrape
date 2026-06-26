@@ -98,42 +98,28 @@ _INGREDIENT_CLEAN_WORDS = re.compile(
 )
 
 
-def infer_equipment(instructions: str) -> list[str]:
-    """Scan instruction text for equipment keywords. Order preserved, no dupes."""
+def _scan(rules: list[tuple[re.Pattern, str]], text: str) -> list[str]:
     found: list[str] = []
-    for pattern, label in _EQUIPMENT_RULES:
-        if label not in found and pattern.search(instructions):
+    for pattern, label in rules:
+        if label not in found and pattern.search(text):
             found.append(label)
     return found
+
+
+def infer_equipment(instructions: str) -> list[str]:
+    return _scan(_EQUIPMENT_RULES, instructions)
 
 
 def infer_flavor_profile(ingredients: list[str], title: str) -> list[str]:
-    """Scan combined ingredient text + title for flavor keywords."""
-    text = " ".join(ingredients) + " " + title
-    found: list[str] = []
-    for pattern, label in _FLAVOR_RULES:
-        if label not in found and pattern.search(text):
-            found.append(label)
-    return found
+    return _scan(_FLAVOR_RULES, " ".join(ingredients) + " " + title)
 
 
 def infer_aroma_profile(ingredients: list[str], instructions: str, title: str) -> list[str]:
-    """Scan ingredients, instructions, and title for aroma families."""
-    text = " ".join(ingredients) + " " + instructions + " " + title
-    found: list[str] = []
-    for pattern, label in _AROMA_RULES:
-        if label not in found and pattern.search(text):
-            found.append(label)
-    return found
+    return _scan(_AROMA_RULES, " ".join(ingredients) + " " + instructions + " " + title)
 
 
 def infer_cooking_processes(instructions: str) -> list[str]:
-    """Scan instruction text for cooking process verbs."""
-    found: list[str] = []
-    for pattern, label in _COOKING_PROCESS_RULES:
-        if label not in found and pattern.search(instructions):
-            found.append(label)
-    return found
+    return _scan(_COOKING_PROCESS_RULES, instructions)
 
 
 def infer_meal_type(record: dict) -> str | None:

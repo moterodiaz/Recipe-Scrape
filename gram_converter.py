@@ -324,6 +324,9 @@ def _normalize_name(s: str) -> str:
     return " ".join(tokens)
 
 
+_DENSITY_KEYS = sorted(GRAMS_PER_CUP, key=len, reverse=True)
+
+
 def _lookup_density(name: str) -> float | None:
     """Grams/cup for ingredient name.
     Order: exact → token-set subset (handles word-order variants) → substring → token overlap."""
@@ -331,14 +334,13 @@ def _lookup_density(name: str) -> float | None:
     if norm in GRAMS_PER_CUP:
         return GRAMS_PER_CUP[norm]
     norm_tokens = set(norm.split())
-    # Token-set subset: all key tokens present in norm (order-independent, e.g. "sliced almonds" → "almonds sliced")
-    for key in sorted(GRAMS_PER_CUP, key=len, reverse=True):
+    for key in _DENSITY_KEYS:
         if set(key.split()) <= norm_tokens:
             return GRAMS_PER_CUP[key]
-    for key in sorted(GRAMS_PER_CUP, key=len, reverse=True):
+    for key in _DENSITY_KEYS:
         if key in norm:
             return GRAMS_PER_CUP[key]
-    for key in sorted(GRAMS_PER_CUP, key=len, reverse=True):
+    for key in _DENSITY_KEYS:
         if any(t in norm_tokens for t in key.split() if len(t) > 3):
             return GRAMS_PER_CUP[key]
     return None

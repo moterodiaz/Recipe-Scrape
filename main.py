@@ -55,6 +55,10 @@ def _assemble(raw: dict) -> dict:
         "cooking_processes": raw.get("cooking_processes", []),
         "flavor_profile": raw.get("flavor_profile", []),
         "aroma_profile": raw.get("aroma_profile", []),
+        "crops_matched": raw.get("crops_matched", []),
+        "crops_missing": raw.get("crops_missing", []),
+        "crop_coverage": raw.get("crop_coverage", None),
+        "dispensable_skipped": raw.get("dispensable_skipped", []),
         "instructions_raw": raw.get("instructions", ""),
         "servings": raw.get("servings"),
         "prep_time_min": raw.get("prep_time_min"),
@@ -92,6 +96,8 @@ def main():
     parser.add_argument("--max-pages", type=int, default=500, help="Max pages per category in Phase 1 (lower for test runs)")
     parser.add_argument("--target-urls", type=int, default=1000, help="Target URL count for BBC collection")
     parser.add_argument("--url", help="Scrape a single recipe URL instead of collecting Food52 URLs")
+    parser.add_argument("--crop-csv", default=None, help="Path to crop CSV; enables Phase 3 crop cross-check")
+    parser.add_argument("--min-crop-coverage", type=float, default=0.0, help="Exclude recipes below this crop coverage (0–1)")
     args = parser.parse_args()
 
     Path("output").mkdir(exist_ok=True)
@@ -112,14 +118,6 @@ def main():
         else:
             url_records = collect_urls(max_pages=args.max_pages)
 
-    if not args.url and args.source == "food52":
-        # ponytail: filter here covers stale cache files where the URL collector regex hadn't run yet
-        _recipe_url_re = re.compile(r"/recipes/\d{4,}-")
-        before = len(url_records)
-        url_records = [r for r in url_records if _recipe_url_re.search(r["url"])]
-        if len(url_records) != before:
-            log.info("Filtered %d non-recipe URLs", before - len(url_records))
-
     if args.offset:
         url_records = url_records[args.offset:]
         log.info("Skipped first %d URLs", args.offset)
@@ -134,6 +132,14 @@ def main():
     # Phase 2B
     for record in scraped:
         process_record(record)
+
+    # Phase 3 — crop cross-check (optional)
+    if args.crop_csv:
+        from crop_checker import load_crop_terms, annotate_crop_coverage
+        crop_terms = load_crop_terms(args.crop_csv)
+        before = len(scraped)
+        scraped = annotate_crop_coverage(scraped, crop_terms, min_coverage=args.min_crop_coverage)
+        log.info("Crop filter: kept %d / %d recipes (min_coverage=%.2f)", len(scraped), before, args.min_crop_coverage)
 
     # Assemble and write
     records = [_assemble(r) for r in scraped]
