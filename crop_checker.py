@@ -17,26 +17,6 @@ _DISPENSABLE_NAMES = frozenset(("salt", "pepper", "black pepper", "sea salt", "w
 # Always-stocked station pantry — counts as matched regardless of crop/protein CSVs
 _PANTRY_NAMES = frozenset(("flour", "milk", "powdered milk", "powdered cheese"))
 
-# Growable crops absent from or only partially named in Crop.csv:
-#   onion  — C24 is "green onion" only; plain onion is the same genus
-#   garlic — not in CSV; allium, trivially growable
-#   ginger — not in CSV; rhizome crop
-#   coriander — same plant as cilantro (C30); UK/recipe name differs
-#   thyme, parsley — herbs, not yet in CSV
-#   lime, lemon — citrus; not in CSV but referenced constantly
-#   pea — 3-char token filtered by len>=4 guard; C7/C38 cover pea varieties
-_COMMON_CROPS = frozenset((
-    "onion", "garlic", "ginger", "coriander",
-    "thyme", "parsley", "lime", "lemon", "pea",
-))
-
-# Generic adjectives embedded in multi-word crop names that collide with culinary terms.
-# "caster sugar" via C7 "dwarf grey sugar pea", "extra virgin olive oil" via C10, etc.
-_CROP_TOKEN_STOPWORDS = frozenset({
-    "dwarf", "extra", "fresh", "sweet", "golden", "hybrid",
-    "mini", "early", "hull", "sugar", "seed", "yellow",
-})
-
 
 def _parse_crop_name(raw: str) -> list[str]:
     """Normalize one CSV Name entry into base terms."""
@@ -105,26 +85,31 @@ def load_protein_terms(csv_path: str) -> set[str]:
     return exact
 
 
-def _match(name: str, exact: set[str], tokens: set[str]) -> bool:
+def _match(name: str, exact: set[str], single_terms: set[str], multi_terms: list[str]) -> bool:
     name_toks = set(name.split())
     # pantry: word-token match so "bread flour" → matches "flour" but "buttermilk" ≠ "milk"
     if any(all(t in name_toks for t in p.split()) for p in _PANTRY_NAMES):
         return True
-    # common crops: any word in ingredient name starts with a common crop term
-    if any(ntok.startswith(ctok) for ntok in name_toks for ctok in _COMMON_CROPS):
-        return True
+    # exact full-term match
     if name in exact:
         return True
-    # Exact token match
-    if any(tok in tokens for tok in name_toks if len(tok) >= 4):
-        return True
-    # Prefix match — ingredient word starts with crop term handles plurals
-    # e.g. "potatoes" startswith "potato", "carrots" startswith "carrot"
-    return any(
+    # single-word crop terms: prefix match handles plurals (lentils→lentil, potatoes→potato)
+    if any(
         ntok.startswith(ctok)
-        for ntok in name_toks if len(ntok) >= 4
-        for ctok in tokens if len(ctok) >= 4
-    )
+        for ntok in name_toks
+        for ctok in single_terms
+        if len(ctok) >= 4
+    ):
+        return True
+    # multi-word crop terms: every significant token must prefix-match some ingredient token.
+    # Requires >= 2 significant tokens so short/generic terms don't match on one common word.
+    for mterm in multi_terms:
+        sig = [t for t in mterm.split() if len(t) >= 4]
+        if len(sig) < 2:
+            continue
+        if all(any(ntok.startswith(mtok) for ntok in name_toks) for mtok in sig):
+            return True
+    return False
 
 
 def annotate_crop_coverage(
@@ -133,13 +118,10 @@ def annotate_crop_coverage(
     protein_terms: set[str] | None = None,
     min_coverage: float = 0.0,
 ) -> list[dict]:
-    # ponytail: covered_terms built once, O(1) per-ingredient lookup via set membership
+    # ponytail: split terms once; single-word → prefix match, multi-word → all-tokens match
     covered_terms = crop_terms | (protein_terms or set())
-    crop_tokens = {
-        tok for term in covered_terms
-        for tok in term.split()
-        if len(tok) >= 4 and tok not in _CROP_TOKEN_STOPWORDS
-    }
+    single_terms = {t for t in covered_terms if " " not in t}
+    multi_terms = [t for t in covered_terms if " " in t]
     result = []
     for r in records:
         names = r.get("ingredient_names") or []
@@ -151,7 +133,7 @@ def annotate_crop_coverage(
         essential_names = [n for _, n in essential]
         dispensable_names = [n for raw, n in pairs if _is_dispensable(raw, n)]
 
-        matched = [n for n in essential_names if _match(n, covered_terms, crop_tokens)]
+        matched = [n for n in essential_names if _match(n, covered_terms, single_terms, multi_terms)]
         total = len(essential_names)
 
         r["crops_matched"] = matched
