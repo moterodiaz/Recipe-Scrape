@@ -14,7 +14,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Crop CSV must be present: `"Untitled spreadsheet - 01a_Crop Production Items.csv"` in project root.
+Both CSVs must be present in project root: `Crop.csv` and `Protein.csv`.
 
 ---
 
@@ -34,7 +34,8 @@ nohup python3 main.py \
   --target-urls 50000 \
   --max-pages 15000 \
   --limit 50000 \
-  --crop-csv "Untitled spreadsheet - 01a_Crop Production Items.csv" \
+  --crop-csv Crop.csv \
+  --protein-csv Protein.csv \
   --min-crop-coverage 0.0 \
   > bbc_max_scrape.log 2>&1 &
 
@@ -117,7 +118,8 @@ Once you pick a threshold T (e.g. 0.5):
 ```bash
 python3 crop_checker.py \
   --recipes output/recipes.json \
-  --crop-csv "Untitled spreadsheet - 01a_Crop Production Items.csv" \
+  --crop-csv Crop.csv \
+  --protein-csv Protein.csv \
   --min-coverage 0.5 \
   --out output/recipes_final.json
 
@@ -137,7 +139,8 @@ source .venv/bin/activate
 python3 main.py \
   --source bbc \
   --skip-collection \
-  --crop-csv "Untitled spreadsheet - 01a_Crop Production Items.csv" \
+  --crop-csv Crop.csv \
+  --protein-csv Protein.csv \
   --min-crop-coverage 0.0 \
   2>&1 | tee bbc_resume.log
 ```

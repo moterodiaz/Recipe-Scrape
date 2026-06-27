@@ -118,7 +118,8 @@ def collect_bbc_urls(max_urls: int = 1000, max_pages: int = 250) -> list[dict]:
             polite_sleep()
 
     records = list(catalog.values())
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(json.dumps(records, indent=2))
-    log.info("Wrote %d BBC URLs from %d pages -> %s", len(records), len(visited), OUTPUT_PATH)
+    _out = Path("output/bbc_recipe_urls.json")
+    _out.parent.mkdir(parents=True, exist_ok=True)
+    _out.write_text(json.dumps(records, indent=2))
+    log.info("Wrote %d BBC URLs from %d pages -> %s", len(records), len(visited), _out)
     return records

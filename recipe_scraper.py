@@ -1,7 +1,7 @@
 """
 Phase 2A — Recipe Scraping.
 
-For each URL record, fetches the Food52 page and extracts:
+For each URL record, fetches the BBC Good Food page and extracts:
   title, ingredients, instructions, servings, cook_time_min
 
 Strategy: JSON-LD schema.org/Recipe first (reliable); HTML fallback second.

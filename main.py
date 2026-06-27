@@ -93,6 +93,7 @@ def main():
     parser.add_argument("--target-urls", type=int, default=1000, help="Target URL count for collection")
     parser.add_argument("--url", help="Scrape a single recipe URL")
     parser.add_argument("--crop-csv", default=None, help="Path to crop CSV; enables Phase 3 crop cross-check")
+    parser.add_argument("--protein-csv", default=None, help="Path to Protein.csv; protein basket counted toward coverage")
     parser.add_argument("--min-crop-coverage", type=float, default=0.0, help="Exclude recipes below this crop coverage (0–1)")
     args = parser.parse_args()
 
@@ -127,10 +128,11 @@ def main():
 
     # Phase 3 — crop cross-check (optional)
     if args.crop_csv:
-        from crop_checker import load_crop_terms, annotate_crop_coverage
+        from crop_checker import load_crop_terms, load_protein_terms, annotate_crop_coverage
         crop_terms = load_crop_terms(args.crop_csv)
+        protein_terms = load_protein_terms(args.protein_csv) if args.protein_csv else set()
         before = len(scraped)
-        scraped = annotate_crop_coverage(scraped, crop_terms, min_coverage=args.min_crop_coverage)
+        scraped = annotate_crop_coverage(scraped, crop_terms, protein_terms, min_coverage=args.min_crop_coverage)
         log.info("Crop filter: kept %d / %d recipes (min_coverage=%.2f)", len(scraped), before, args.min_crop_coverage)
 
     records = [_assemble(r) for r in scraped]

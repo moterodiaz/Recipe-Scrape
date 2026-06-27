@@ -1,0 +1,80 @@
+﻿ID,Name,Category,Growth Time to Harvest,Propagation rate,Area of Growth (m^2),Energy (kcal),Protein (g),Carbohydrate (g),Total Fat (g),Dietary Fiber (g),Vitamin A (μg),Vitamin D (μg),Vitamin E (mg),Vitamin K (μg),Vitamin C (mg),Thiamin B1 (mg),Riboflavin B2 (mg),Niacin B3 (mg),Vitamin B6 (mg),Folate B9 (μg),Vitamin B12 (μg),Calcium (mg),Iron (mg),Magnesium (mg),Phosphorus (mg),Potassium (mg),Zinc (mg),Iodine (μg),P01 Vapor Compression Refrigeration System,P02 Deep Freezer / Cryogenic Storage Unit,P03 Fermentation Vessels & Controlled-Environment Containers,P04 Microbial Culture Storage,P05 Retort / Autoclave (Pressure Cooker),P06 Dehydration: Hot-Air / Tray Dryer,P07 Dehydration: Drum Dryer,P08 Dehydration: Spray Dryer,P09 Vacuum Sealing & Multi-Layer Barrier Packaging,P10 Lyophilizer (Freeze Dryer),P11 MAP Station (Inert Gas Flush + Sealer),P12 Gamma Irradiation / Electron Beam Unit,P13 Mycelium (Fungal) Packaging,P14 Algae-Based Bioplastic Packaging,P15 Bacterial Cellulose (BC) Packaging,Crew tending,[v4] O2 produced g/kg biomass,[v4] CO2 consumed g/kg biomass,[v4] H2O recycled L/kg biomass,Scientific Name,Source kind,Stocking density (kg/m³),Floor area per kg edible/yr (m²/kg·yr⁻¹),Water volume per kg fish (L/kg),Feed conversion ratio FCR (kg feed/kg gain),Feed protein requirement (%),Primary feed source,Edible yield % (live→plate),Harvest mass per individual (g),TRL Mars (1-9),Source citations
+PR01,Nile Tilapia,Fish,240,30,22,100,23,0,2,0,8,3.51,1.2,0.2,0,0.08,0.18,5.5,0.35,10,2,1.59,11.7,0.65,220,191,338,25,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,1.4,0,0,180,Oreochromis niloticus,aquaculture,80,2,320,1.6,32,"Plant-based pellets; tolerates Spirulina, BSFL, fermented inedible biomass",35.4,500,4,"https://www.researchgate.net/figure/Nutrient-content-composition-of-nile-Tilapia-in-100-g_tbl1_362628135; Fry 2018 (Table 1); FAO 2019 (UVI, stocking densities); Pai 2024; Felix-Cuencas 2021 (flagged); USDA FDC 175169"
+PR02,Rainbow trout,Fish,240,30,22,103,20,0,4,0,8,8,1.2,0.2,0,0.08,0.18,5.5,0.35,10,2,20,0.8,28,220,300,1,25,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,1.4,0,0,180,Salmo salar,aquaculture,75,1.8,200,1.25,38,High-quality formulated feed (currently fishmeal/oil; plant + insect substitution <=50% feasible),68,4000,3,https://www.verywellfit.com/rainbow-trout-nutrition-facts-and-health-benefits-4801177; Torrissen 2011 (100kg feed->65kg fillet); Fry 2018 (FCR 1.2-1.5); Davidson 2016; Calabrese 2017 (75kg/m3 welfare density - flagged); USDA FDC 175167
+PR03,Common Carp,Fish,240,30,22,162,20,0,4,0,8,8,1.2,0.2,0,0.08,0.18,5.5,0.35,10,2,20,0.8,28,220,300,1,25,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,1.4,0,0,180,Clarias gariepinus,aquaculture,168,1,200,1,35,"Omnivorous; accepts formulated pellets, plant protein substitutes, kitchen waste",50,800,3,https://foodstruct.com/food/carp; FAO 2019 (20-168 kg/m3 extreme robustness); USDA FDC 173687
+PR04,Channel catfish,Fish,240,30,22,95,21,0,0.9,0,8,192,1.2,0.2,0,0.08,0.18,5.5,0.35,10,2,87,0.9,28,220,293,1,25,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,1.4,0,0,180,Oncorhynchus mykiss,aquaculture,75,2.5,250,1.3,40,Carnivorous; formulated feed with fishmeal/oil; partial plant substitution OK,50,500,3,https://www.nutrition-and-you.com/channel-catfish.html; Fry 2018 (FCR ~1.2-1.5); USDA FDC 173688
+PR05,European Seabass,Fish,240,30,22,82,20,0,4,0,8,8,1.2,0.2,0,0.08,0.18,5.5,0.35,10,2,20,0.8,28,220,300,1,25,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,1.4,0,0,180,Scientific name placeholder,production estimate,50,3,200,1.5,35,Estimated formulated feed / biomass-loop compatible ration,60,100,3,https://www.humanitas.net/wiki/european-sea-bass/; Estimated placeholder source; user supplied candidate row
+PR06,Arctic Char,Fish,240,30,22,137,20,0,4,0,8,8,1.2,0.2,0,0.08,0.18,5.5,0.35,10,2,20,0.8,28,220,300,1,25,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,1.4,0,0,180,Ctenopharyngodon idella,aquaculture,30,6,500,1.8,28,"Strictly herbivorous; eats leaves, stems, aquatic plants - primary inedible-biomass converter",50,2000,2,https://www.fortunefishco.net/Assets/ff%20arcticchar.pdf; Li 2022 grass carp review (only herbivorous fish that accepts whole leaf material). USDA FDC limited.
+PR07,Yellow Perch,Fish,240,30,22,91,20,0,4,0,8,8,1.2,0.2,0,0.08,0.18,5.5,0.35,10,2,20,0.8,28,220,300,1,25,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,1.4,0,0,180,Scientific name placeholder,production estimate,50,3,200,1.5,35,Estimated formulated feed / biomass-loop compatible ration,60,100,3,"https://www.fortunefishco.net/Assets/ff%20perch,%20yellow%20lake.pdf; Estimated placeholder source; user supplied candidate row"
+PR08,Solein (Single-cell protein biomass),Bacteria,5,1500,0.5,371,73.42,8,6.12,0,0,0,1,0,0,0.5,1.2,12,0.8,180,0,120,10,75,650,900,6,0,0,0,1,1,0,1,1,1,1,1,1,0,1,1,1,0.5,0,0,20,Scientific name placeholder,production estimate,50,3,200,1.5,35,Estimated formulated feed / biomass-loop compatible ration,60,100,3,https://nutriscan.app/calories-nutrition/solein-protein-powder; Estimated placeholder source; user supplied candidate row
+PR09,Fresh Water Prawn (Macrobrachium rosenbergii),Invertebrate,120,60,12,105,18,1,2,0,5,1,1,0.2,0,0.04,0.12,2.5,0.1,20,4,45,3,40,190,250,1.5,35,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,1,0,0,120,Scientific name placeholder,production estimate,50,3,200,1.5,35,Estimated formulated feed / biomass-loop compatible ration,60,100,3,https://foods.fatsecret.com/calories-nutrition/generic/prawns?portionid=320904&portionamount=100.000; Estimated placeholder source; user supplied candidate row
+PR10,Fresh Water Snail,Invertebrate,120,60,12,90,18,1,2,0,5,1,1,0.2,0,0.04,0.12,2.5,0.1,20,4,45,3,40,190,250,1.5,35,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,1,0,0,120,Scientific name placeholder,production estimate,50,3,200,1.5,35,Estimated formulated feed / biomass-loop compatible ration,60,100,3,https://foods.fatsecret.com/calories-nutrition/usda/snails?portionid=63556&portionamount=100.000; Estimated placeholder source; user supplied candidate row
+PR11,Neocaridina Shrimp,Invertebrate,120,60,12,99,18,1,2,0,5,1,1,0.2,0,0.04,0.12,2.5,0.1,20,4,45,3,40,190,250,1.5,35,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,1,0,0,120,Litopenaeus vannamei,aquaculture,50,3,280,1.5,36,Omnivorous; formulated feed; can graze biofilm in biofloc systems,60,25,3,https://foodstruct.com/food/shrimp-nutrition; Williamson 2019 (22% N retention); biofloc-RAS commercial standard; USDA FDC 175179
+PR12,Oysters Crassostrea gigas,Invertebrate,120,60,12,81,18,1,2,0,5,1,1,0.2,0,0.04,0.12,2.5,0.1,20,4,45,3,40,190,250,1.5,35,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,1,0,0,120,Macrobrachium rosenbergii,aquaculture,20,8,350,2,35,Omnivorous detritivore; scavenges; supplemental pellets,55,35,2,https://www.mealstack.io/foods/mollusks-oyster-pacific-raw; FAO Cultured Aquatic Species. Limited verified nutrient data.
+PR13,Mussels,Invertebrate,120,60,12,172,18,1,2,0,5,1,1,0.2,0,0.04,0.12,2.5,0.1,20,4,45,3,40,190,250,1.5,35,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,1,0,0,120,Scientific name placeholder,production estimate,50,3,200,1.5,35,Estimated formulated feed / biomass-loop compatible ration,60,100,3,https://fdc.nal.usda.gov/food-details/174217/nutrients; Estimated placeholder source; user supplied candidate row
+PR14,Artemia,Invertebrate,120,60,12,100,18,1,2,0,5,1,1,0.2,0,0.04,0.12,2.5,0.1,20,4,45,3,40,190,250,1.5,35,1,1,0,0,1,1,0,0,1,1,1,0,0,0,0,1,0,0,120,Artemia franciscana,aquaculture / live feed,50,3,200,1.5,35,"Filter feeder: microalgae, yeast, RAS detritus",100,0.01,4,Brown 2021 (NASA SAS palatability: remarkably similar to ground beef in texture and taste); biosecurity via salinity
+PR15,Yellow Meal Worms,Insect,45,120,4,210,24,6,13,4,5,0,2,1,0,0.2,0.7,5,0.4,80,1,80,5,90,250,350,4,5,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0.8,0,0,40,Daphnia magna,live feed / micro-protein,50,3,200,1.5,35,"Filter feeder: algae (incl. Chlorella, Scenedesmus), bacteria from RAS",100,0.002,4,"Herawati 2018 (75% protein dry-wt); Proulx 1985 (48,000 ind/L); Gorzelnik 2023 (algae feed). CERAS heritage."
+PR16,House Crickets,Insect,45,120,4,210,24,6,13,4,5,0,2,1,0,0.2,0.7,5,0.4,80,1,80,5,90,250,350,4,5,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0.8,0,0,40,Brachionus plicatilis,live feed,50,3,200,1.5,35,"Filter feeder: microalgae (Nannochloropsis), yeast",100,0.000002,4,"Yoshimatsu 2014 (160,000 ind/mL); standard hatchery first-feed for marine fish larvae"
+PR17,Japenese Quail,Poultry,49,30,4,150,22,0,5,0,30,0.2,0.6,2,0,0.1,0.2,8,0.5,10,0.5,12,1.3,25,220,300,1.5,8,1,1,0,0,1,1,0,0,1,1,1,1,0,0,0,2,0,0,60,Acartia tonsa,live feed,50,3,200,1.5,35,Filter feeder: phytoplankton,100,0.00001,3,Stottrup 2003 (cult. for marine larviculture); only needed if salmon/cod fry are reared from egg
+PR18,Chicken,Poultry,49,30,8,150,22,0,5,0,30,0.2,0.6,2,0,0.1,0.2,8,0.5,10,0.5,12,1.3,25,220,300,1.5,8,1,1,0,0,1,1,0,0,1,1,1,1,0,0,0,2,0,0,60,Scientific name placeholder,production estimate,50,3,200,1.5,35,Estimated formulated feed / biomass-loop compatible ration,60,100,3,Estimated placeholder source; user supplied candidate row
+PR19,Duck,Poultry,49,25,8,150,22,0,5,0,30,0.2,0.6,2,0,0.1,0.2,8,0.5,10,0.5,12,1.3,25,220,300,1.5,8,1,1,0,0,1,1,0,0,1,1,1,1,0,0,0,2,0,0,60,Scientific name placeholder,production estimate,50,3,200,1.5,35,Estimated formulated feed / biomass-loop compatible ration,60,100,3,Estimated placeholder source; user supplied candidate row
+PR20,Cultivated meat (cell-culture),Cultivated,28,20,1.5,150,22,0,5,0,30,0.2,0.6,2,0,0.1,0.2,8,0.5,10,0.5,12,1.3,25,220,300,1.5,8,1,1,1,1,1,1,0,0,1,1,1,1,0,0,0,2,0,0,60,Scientific name placeholder,production estimate,50,3,200,1.5,35,Estimated formulated feed / biomass-loop compatible ration,60,100,3,Estimated placeholder source; user supplied candidate row
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

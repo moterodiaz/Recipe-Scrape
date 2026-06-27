@@ -349,7 +349,7 @@ _STRIP_WORDS = frozenset({
     "a", "an", "the", "of", "or", "and", "to", "taste",
 })
 
-_ALL_UNITS = sorted(list(_TO_CUPS) + list(_TO_GRAMS_DIRECT), key=len, reverse=True)
+_ALL_UNITS = sorted([*_TO_CUPS, *_TO_GRAMS_DIRECT], key=len, reverse=True)
 _QTY_RE = re.compile(r"^(\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)")
 _EXPLICIT_GRAMS_RE = re.compile(
     r"(?:about\s+)?(\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)\s*(kilograms?|kg|grams?|g)\b",

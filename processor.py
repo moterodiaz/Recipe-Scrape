@@ -158,7 +158,7 @@ def process_record(record: dict) -> dict:
     title = record.get("title", "") or ""
 
     record["meal_type"] = infer_meal_type(record)
-    record["equipment"] = infer_equipment(record.get("instructions", "") or "")
+    record["equipment"] = infer_equipment(instructions)
     record["cooking_processes"] = infer_cooking_processes(instructions)
     record["flavor_profile"] = infer_flavor_profile(ingredients, title)
     record["aroma_profile"] = infer_aroma_profile(ingredients, instructions, title)
