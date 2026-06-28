@@ -1,8 +1,9 @@
 output/
+Logs/
 __pycache__/
 *.pyc
 .venv/
 venv/
 *.egg-info/
 .DS_Store
-BOOTSTRAP_CLI_SESSION_TRANSCRIPT.txt
+Sources/recipedb_clean_output/

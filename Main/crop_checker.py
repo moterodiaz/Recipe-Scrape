@@ -12,10 +12,23 @@ _DISPENSABLE_ROLE_PHRASES = frozenset((
     "optional", "if desired", "for decoration", "to decorate",
 ))
 
-_DISPENSABLE_NAMES = frozenset(("salt", "pepper", "black pepper", "sea salt", "water", "oil"))
+_DISPENSABLE_NAMES = frozenset(("salt", "pepper", "black pepper", "sea salt", "water"))
 
-# Always-stocked station pantry — counts as matched regardless of crop/protein CSVs
-_PANTRY_NAMES = frozenset(("flour", "milk", "powdered milk", "powdered cheese"))
+# Always-stocked station pantry — loaded from Sources/Pantry.csv; fallback to 4 hardcoded names
+_PANTRY_CSV = Path(__file__).parent.parent / "Sources" / "Pantry.csv"
+_PANTRY_FALLBACK = frozenset(("flour", "milk", "powdered milk", "powdered cheese"))
+
+
+def _load_pantry() -> frozenset:
+    if not _PANTRY_CSV.exists():
+        return _PANTRY_FALLBACK
+    with open(_PANTRY_CSV, newline="", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        next(reader)  # header row
+        return frozenset(row[0].strip().lower() for row in reader if row and row[0].strip())
+
+
+_PANTRY_NAMES = _load_pantry()
 
 
 def _parse_crop_name(raw: str) -> list[str]:
@@ -30,7 +43,11 @@ def _parse_crop_name(raw: str) -> list[str]:
         part = re.sub(r"\([^)]+\)", "", part)
         part = re.sub(r"['\"]", "", part).strip(" ,-")
         if part:
-            terms.append(part.lower())
+            normalized = part.lower()
+            terms.append(normalized)
+            words = normalized.split()
+            if len(words) > 1:
+                terms.append(words[-1])  # cultivar species name is always last word
         for p in parens:
             p = p.strip()
             if p and not re.match(r"^[A-Z][a-z]+ [a-z]+$", p):  # skip Latin binomials
@@ -112,22 +129,51 @@ def _match(name: str, exact: set[str], single_terms: set[str], multi_terms: list
     return False
 
 
-def annotate_crop_coverage(
+def build_basket(
+    crop_csv: str,
+    protein_csv: str | None = None,
+) -> tuple[set[str], set[str], list[str]]:
+    """Build the (covered, single_terms, multi_terms) tuple used by in_basket / _match."""
+    covered = load_crop_terms(crop_csv) | (load_protein_terms(protein_csv) if protein_csv else set())
+    return covered, {t for t in covered if " " not in t}, [t for t in covered if " " in t]
+
+
+def in_basket(name: str, basket: tuple[set[str], set[str], list[str]]) -> bool:
+    """Return True if ingredient name matches any basket term (crop/protein/pantry)."""
+    return _match(name, *basket)
+
+
+def filter_strict(
     records: list[dict],
-    crop_terms: set[str],
-    protein_terms: set[str] | None = None,
-    min_coverage: float = 0.0,
+    basket: tuple[set[str], set[str], list[str]],
+    min_coverage: float = 1.0,
 ) -> list[dict]:
-    # ponytail: split terms once; single-word → prefix match, multi-word → all-tokens match
-    covered_terms = crop_terms | (protein_terms or set())
-    single_terms = {t for t in covered_terms if " " not in t}
-    multi_terms = [t for t in covered_terms if " " in t]
+    """
+    Hard filter: drop any recipe that has essential ingredients not covered by
+    the basket (Crop + Protein + Pantry).
+
+    Unlike annotate_crop_coverage (which only annotates), this is a pre-processing
+    gate — designed to run BEFORE gram conversion and FlavorDB enrichment so that
+    no unmatched recipes waste time in those stages.
+
+    Each surviving record gets crops_matched, crops_missing, crop_coverage, and
+    dispensable_skipped fields written in-place (same as annotate_crop_coverage).
+
+    Args:
+        records:      list of dicts each with ingredient_names + ingredients fields.
+        basket:       tuple from build_basket(); (covered_terms, single_terms, multi_terms).
+        min_coverage: fraction of essential ingredients that must match (default 1.0 = strict).
+                      Pass a lower value (e.g. 0.8) to allow partial matches through.
+
+    Returns:
+        Filtered list — only recipes that meet the min_coverage threshold.
+    """
+    covered_terms, single_terms, multi_terms = basket
     result = []
     for r in records:
         names = r.get("ingredient_names") or []
         raw_ingredients = r.get("ingredients") or []
 
-        # Zip raw + cleaned; filter out dispensable ingredients (garnish, condiments, etc)
         pairs = list(zip(raw_ingredients, names))
         essential = [(raw, n) for raw, n in pairs if not _is_dispensable(raw, n)]
         essential_names = [n for _, n in essential]
@@ -136,14 +182,18 @@ def annotate_crop_coverage(
         matched = [n for n in essential_names if _match(n, covered_terms, single_terms, multi_terms)]
         total = len(essential_names)
 
+        coverage = round(len(matched) / total, 2) if total else 0.0
+
         r["crops_matched"] = matched
         r["crops_missing"] = [n for n in essential_names if n not in matched]
-        r["crop_coverage"] = round(len(matched) / total, 2) if total else 0.0
+        r["crop_coverage"] = coverage
         r["dispensable_skipped"] = dispensable_names
 
-        if r["crop_coverage"] >= min_coverage:
+        if coverage >= min_coverage:
             result.append(r)
+
     return result
+
 
 
 if __name__ == "__main__":
@@ -181,11 +231,24 @@ if __name__ == "__main__":
 
     # Self-check: pantry items always match
     _pantry_recs = [{"ingredients": ["200g flour", "300ml milk"], "ingredient_names": ["flour", "milk"]}]
-    _pantry_out = annotate_crop_coverage(_pantry_recs, set(), set())
+    _pantry_out = filter_strict(_pantry_recs, (set(), set(), []), min_coverage=0.0)
     assert _pantry_out[0]["crop_coverage"] == 1.0, "pantry items should auto-match"
 
+    # Self-check: pantry CSV loaded (fallback or file)
+    assert len(_PANTRY_NAMES) >= 4, f"expected >=4 pantry items, got {len(_PANTRY_NAMES)}"
+
+    # Self-check: build_basket / in_basket
+    if args.protein_csv:
+        _basket = build_basket(args.crop_csv, args.protein_csv)
+        assert in_basket("bread flour", _basket), "bread flour should match pantry 'flour'"
+        assert not in_basket("buttermilk", _basket), "buttermilk should not match basket"
+        assert in_basket("chicken", _basket), "chicken should match protein basket"
+        assert in_basket("potato", _basket), "potato should match crop basket"
+
     records = json.loads(Path(args.recipes).read_text())
-    kept = annotate_crop_coverage(records, crop_terms, protein_terms, args.min_coverage)
+    covered = crop_terms | protein_terms
+    _basket = (covered, {t for t in covered if " " not in t}, [t for t in covered if " " in t])
+    kept = filter_strict(records, _basket, min_coverage=args.min_coverage)
     Path(args.out).write_text(json.dumps(kept, indent=2))
     print(f"Kept {len(kept)}/{len(records)} recipes (min_coverage={args.min_coverage}) → {args.out}")
     print(f"Crop terms: {len(crop_terms)}  Protein terms: {len(protein_terms)}")

@@ -15,10 +15,6 @@ USER_AGENTS = [
 ]
 
 
-def get_headers() -> dict:
-    return {"User-Agent": random.choice(USER_AGENTS), "Accept-Language": "en-US,en;q=0.9"}
-
-
 def polite_sleep():
     time.sleep(random.uniform(1.0, 2.0))
 
@@ -26,7 +22,7 @@ def polite_sleep():
 def fetch(session: requests.Session, url: str, log) -> BeautifulSoup | None:
     """GET url; return BeautifulSoup or None on non-200 / error."""
     try:
-        resp = session.get(url, headers=get_headers(), timeout=20)
+        resp = session.get(url, headers={"User-Agent": random.choice(USER_AGENTS), "Accept-Language": "en-US,en;q=0.9"}, timeout=20)
         if resp.status_code != 200:
             log.warning("HTTP %s → %s", resp.status_code, url)
             return None
